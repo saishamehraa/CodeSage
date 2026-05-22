@@ -1,15 +1,13 @@
-// src/app/components/Scanner.tsx
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Upload, Github, Link as LinkIcon, Scan, Shield, Code2, Database, Sparkles } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { useNavigate } from "react-router";
 
-import { api } from "../lib/api";
 import { LiveScannerOverlay } from "./LiveScannerOverlay";
 import { useRealtimeScan } from "../hooks/useRealtimeScan";
 
@@ -27,54 +25,55 @@ export function Scanner() {
   // Navigate automatically when scan progress hits 100
   useEffect(() => {
     if (activeProjectId && scanState.scanProgress >= 100) {
-      setTimeout(() => {
+      const timer = setTimeout(() => {
         navigate(`/analysis/${activeProjectId}`);
-      }, 1500); // 1.5s delay to show the "Complete" state briefly
+      }, 1500);
+      return () => clearTimeout(timer);
     }
   }, [scanState.scanProgress, activeProjectId, navigate]);
 
+  const handleStartScan = async () => {
+    if (uploadMethod !== 'upload' && !repoUrl) return;
 
-const handleStartScan = async () => {
-  if (uploadMethod !== 'upload' && !repoUrl) return;
+    // Reset state to ensure previous subscriptions are torn down by the hook
+    setActiveProjectId(null);
 
-  try {
-    const formData = new FormData();
-    formData.append('uploadMethod', uploadMethod);
-    
-    if (uploadMethod === 'upload') {
-      // Assuming you have a state variable holding the selected File object
-      const fileInput = document.getElementById('zip-upload') as HTMLInputElement;
-      if (fileInput?.files?.[0]) {
-        formData.append('file', fileInput.files[0]);
+    try {
+      const formData = new FormData();
+      formData.append('uploadMethod', uploadMethod);
+      
+      if (uploadMethod === 'upload') {
+        const fileInput = document.getElementById('zip-upload') as HTMLInputElement;
+        if (fileInput?.files?.[0]) {
+          formData.append('file', fileInput.files[0]);
+        }
+      } else {
+        formData.append('repoUrl', repoUrl);
       }
-    } else {
-      formData.append('repoUrl', repoUrl);
+
+      const response = await fetch('/api/start-scan', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Use a small delay to allow React to process the null state, 
+        // ensuring clean channel initialization in the hook
+        setTimeout(() => setActiveProjectId(data.projectId), 50);
+      } else {
+        console.error("Failed to start scan:", data.error);
+      }
+    } catch (err) {
+      console.error("API error:", err);
     }
-
-    // Hit your new Node.js endpoint
-    const response = await fetch('/api/start-scan', {
-      method: 'POST',
-      body: formData,
-    });
-
-    const data = await response.json();
-
-    if (data.success) {
-      // Set the active ID to trigger the realtime WebSocket overlay
-      setActiveProjectId(data.projectId);
-    } else {
-      console.error("Failed to start scan:", data.error);
-    }
-
-  } catch (err) {
-    console.error("API error:", err);
-  }
-};
+  };
 
   const features = [
     { icon: Shield, title: "Security Analysis", description: "OWASP Top 10, CVE detection", gradient: "from-red-500 to-orange-500" },
     { icon: Code2, title: "Code Quality", description: "Syntax errors, runtime risks", gradient: "from-blue-500 to-cyan-500" },
-    { icon: Database, title: "Threat Intelligence", description: "Live web scanning via Bright Data", gradient: "from-purple-500 to-pink-500" },
+    { icon: Database, title: "Threat Intelligence", description: "Live web scanning", gradient: "from-purple-500 to-pink-500" },
     { icon: Sparkles, title: "Auto-Fix Engine", description: "AI-generated security patches", gradient: "from-emerald-500 to-green-500" },
   ];
 
@@ -82,7 +81,6 @@ const handleStartScan = async () => {
     <div className="p-8">
       <div className="max-w-5xl mx-auto space-y-8">
         
-        {/* Header (Hidden during scan for focus) */}
         {!activeProjectId && (
           <div className="text-center">
             <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-violet-500/10 border border-violet-500/30 mb-4">
@@ -102,9 +100,8 @@ const handleStartScan = async () => {
           {!activeProjectId ? (
             <motion.div key="upload" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="space-y-8">
               
-              {/* Features Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {features.map((feature, index) => (
+                {features.map((feature) => (
                   <Card key={feature.title} className="bg-slate-900/50 border-white/10 backdrop-blur-xl">
                     <CardContent className="p-4">
                       <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${feature.gradient} flex items-center justify-center mb-3`}>
@@ -117,7 +114,6 @@ const handleStartScan = async () => {
                 ))}
               </div>
 
-              {/* Upload Card */}
               <Card className="bg-slate-900/50 border-white/10 backdrop-blur-xl">
                 <CardHeader>
                   <CardTitle className="text-white">Select Target</CardTitle>
@@ -138,34 +134,21 @@ const handleStartScan = async () => {
 
                     <TabsContent value="upload" className="mt-6">
                       <div className="border-2 border-dashed border-white/10 rounded-lg p-12 text-center hover:border-violet-500/30 transition-all cursor-pointer">
+                        <Input id="zip-upload" type="file" className="hidden" />
                         <Upload className="w-12 h-12 text-slate-500 mx-auto mb-4" />
                         <h3 className="text-lg font-semibold text-white mb-2">Drop your ZIP file here</h3>
-                        <Button variant="outline" className="border-white/10 text-white mt-2">Browse Files</Button>
+                        <Button variant="outline" className="border-white/10 text-white mt-2" onClick={() => document.getElementById('zip-upload')?.click()}>Browse Files</Button>
                       </div>
                     </TabsContent>
 
                     <TabsContent value="github" className="mt-6 space-y-4">
-                      <div>
-                        <Label className="text-white mb-2 block">GitHub Repository URL</Label>
-                        <Input
-                          placeholder="https://github.com/username/repository"
-                          value={repoUrl}
-                          onChange={(e) => setRepoUrl(e.target.value)}
-                          className="bg-slate-800/50 border-white/10 text-white"
-                        />
-                      </div>
+                      <Label className="text-white">GitHub Repository URL</Label>
+                      <Input placeholder="https://github.com/username/repository" value={repoUrl} onChange={(e) => setRepoUrl(e.target.value)} className="bg-slate-800/50 border-white/10 text-white" />
                     </TabsContent>
 
                     <TabsContent value="url" className="mt-6 space-y-4">
-                      <div>
-                        <Label className="text-white mb-2 block">Git Repository URL</Label>
-                        <Input
-                          placeholder="https://gitlab.com/username/repository.git"
-                          value={repoUrl}
-                          onChange={(e) => setRepoUrl(e.target.value)}
-                          className="bg-slate-800/50 border-white/10 text-white"
-                        />
-                      </div>
+                      <Label className="text-white">Git Repository URL</Label>
+                      <Input placeholder="https://gitlab.com/username/repository.git" value={repoUrl} onChange={(e) => setRepoUrl(e.target.value)} className="bg-slate-800/50 border-white/10 text-white" />
                     </TabsContent>
                   </Tabs>
 

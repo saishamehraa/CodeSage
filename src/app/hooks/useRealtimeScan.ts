@@ -3,18 +3,8 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { scanPhases } from '../lib/mockData';
 
-export interface ScanState {
-  isScanning: boolean;
-  scanProgress: number;
-  currentPhase: string;
-  currentFile: string;
-  liveAiReasoning: string;
-  criticalCount: number;
-  highCount: number;
-}
-
 export function useRealtimeScan(projectId: string | null) {
-  const [state, setState] = useState<ScanState>({
+  const [state, setState] = useState({
     isScanning: false,
     scanProgress: 0,
     currentPhase: scanPhases[0],
@@ -29,42 +19,50 @@ export function useRealtimeScan(projectId: string | null) {
 
     setState(prev => ({ ...prev, isScanning: true }));
 
-    // 1. Listen to Broadcast channel for quick-moving text (AI logs, progress bar updates)
-    const scanChannel = supabase.channel(`scan:${projectId}`)
-      .on('broadcast', { event: 'progress_update' }, ({ payload }) => {
-        setState(prev => ({
-          ...prev,
-          scanProgress: payload.progress,
-          currentPhase: payload.phase,
-          currentFile: payload.file || prev.currentFile,
-          liveAiReasoning: payload.reasoning || prev.liveAiReasoning,
-        }));
-      })
-      .subscribe();
+    // Initialize channels
+    const scanChannel = supabase.channel(`scan:${projectId}`);
+    const issueChannel = supabase.channel(`public-issues:${projectId}`);
 
-    // 2. Listen directly to Postgres changes on the 'issues' table for live discovery counts
-    const issueChannel = supabase.channel(`public-issues:${projectId}`)
-      .on('postgres_changes', {
+    // 1. Attach listeners FIRST
+    scanChannel.on('broadcast', { event: 'progress_update' }, ({ payload }) => {
+      setState(prev => ({
+        ...prev,
+        scanProgress: payload.progress,
+        currentPhase: payload.phase,
+        currentFile: payload.file || prev.currentFile,
+        liveAiReasoning: payload.reasoning || prev.liveAiReasoning,
+      }));
+    });
+
+    issueChannel.on(
+      'postgres_changes',
+      {
         event: 'INSERT',
         schema: 'public',
         table: 'issues',
         filter: `project_id=eq.${projectId}`
-      }, (payload) => {
+      },
+      (payload) => {
         const newIssue = payload.new;
         setState(prev => ({
           ...prev,
           criticalCount: newIssue.severity === 'critical' ? prev.criticalCount + 1 : prev.criticalCount,
           highCount: newIssue.severity === 'high' ? prev.highCount + 1 : prev.highCount,
-          liveAiReasoning: `[DISCOVERED] Detected ${newIssue.issue_type} in ${newIssue.file_path}`
+          liveAiReasoning: `[DISCOVERED] ${newIssue.issue_type} in ${newIssue.file_path}`
         }));
-      })
-      .subscribe();
+      }
+    );
 
+    // 2. Subscribe LAST
+    scanChannel.subscribe();
+    issueChannel.subscribe();
+
+    // 3. Cleanup to prevent memory leaks and "ghost" connections
     return () => {
       supabase.removeChannel(scanChannel);
       supabase.removeChannel(issueChannel);
     };
   }, [projectId]);
 
-  return { state, setState };
+  return { state };
 }
