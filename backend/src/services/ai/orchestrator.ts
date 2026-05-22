@@ -3,9 +3,9 @@ import { analyzeCodeFile } from './codeAnalyzer';
 
 // USE THESE STABLE FREE MODELS (Higher success rate on OpenRouter)
 const MODEL_CHAIN = [
-  "gryphe/llama-3-8b-instruct:free",
-  "nousresearch/hermes-3-llama-3.1-8b:free",
-  "meta-llama/llama-3.1-8b-instruct:free"
+  "google/gemini-2.0-flash-lite-001",
+  "meta-llama/llama-3.3-70b-instruct:free",
+  "mistralai/mistral-nemo"
 ];
 
 export async function orchestrateAnalysis(fileName: string, content: string) {
