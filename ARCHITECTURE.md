@@ -1,509 +1,549 @@
-# CodeSage Architecture
+# 🏗️ CodeSage Architecture
 
-This document describes the technical architecture of the CodeSage platform.
-
-## 🏗️ System Overview
-
-CodeSage is a client-side web application built with React, TypeScript, and TailwindCSS. It demonstrates an AI-powered code analysis and security intelligence platform with real-time web data integration.
-
-## 📐 Architecture Diagram
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                     Client Application                       │
-│  ┌──────────────────────────────────────────────────────┐   │
-│  │                   React Router                        │   │
-│  │  ┌──────────┬──────────┬──────────┬──────────────┐   │   │
-│  │  │Dashboard │ Scanner  │ Analysis │  Settings    │   │   │
-│  │  └──────────┴──────────┴──────────┴──────────────┘   │   │
-│  └──────────────────────────────────────────────────────┘   │
-│  ┌──────────────────────────────────────────────────────┐   │
-│  │              Component Layer                          │   │
-│  │  - Charts (Recharts)                                 │   │
-│  │  - Code Editor (Monaco)                              │   │
-│  │  - UI Components (Radix UI)                          │   │
-│  │  - Animations (Motion)                               │   │
-│  └──────────────────────────────────────────────────────┘   │
-│  ┌──────────────────────────────────────────────────────┐   │
-│  │              Data Layer                               │   │
-│  │  - Mock Data (Development)                           │   │
-│  │  - API Clients (Production)                          │   │
-│  │  - State Management                                  │   │
-│  └──────────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────┘
-                            │
-                            ▼
-┌─────────────────────────────────────────────────────────────┐
-│                    External Services                         │
-│  ┌─────────────┬──────────────────┬──────────────────────┐  │
-│  │  OpenAI API │  Bright Data API │  GitHub API          │  │
-│  │  (Analysis) │  (Threat Intel)  │  (Repositories)      │  │
-│  └─────────────┴──────────────────┴──────────────────────┘  │
-└─────────────────────────────────────────────────────────────┘
-```
-
-## 🎯 Core Modules
-
-### 1. Routing Layer (`/src/app/routes.tsx`)
-
-Multi-page application using React Router 7 with data mode:
-
-```typescript
-- / (Dashboard)
-- /scanner (Repository Upload)
-- /repository/:id (File Structure)
-- /analysis/:id (Detailed Analysis)
-- /settings (Configuration)
-```
-
-### 2. Layout Components
-
-#### Root Layout (`/src/app/components/Root.tsx`)
-- Sidebar navigation
-- User profile
-- Persistent layout across routes
-- Animated background effects
-- Glassmorphism styling
-
-#### Page Components
-Each page is a self-contained module with:
-- Data fetching logic
-- UI state management
-- Component composition
-- Responsive design
-
-### 3. UI Component Library
-
-Built on Radix UI primitives with custom styling:
-
-**Location**: `/src/app/components/ui/`
-
-**Components**:
-- **Card**: Glassmorphic containers
-- **Button**: Action triggers with gradients
-- **Input/Select**: Form controls
-- **Badge**: Status indicators
-- **Progress**: Score visualizations
-- **Tabs**: Content organization
-- **Dialog**: Modal interactions
-- **Scroll Area**: Custom scrollbars
-- **Tooltip**: Contextual information
-
-### 4. Data Visualization
-
-#### Recharts Integration
-```typescript
-- Area Charts: Security trends over time
-- Bar Charts: Issue distribution by type
-- Pie Charts: Severity breakdown
-- Radial Bars: Score indicators
-```
-
-#### Monaco Editor Integration
-```typescript
-- Syntax highlighting for multiple languages
-- Read-only code display
-- Diff view for before/after comparisons
-- Line number indicators
-- Error highlighting
-```
-
-### 5. Animation Layer
-
-Using Motion (Framer Motion):
-
-```typescript
-- Page transitions
-- Stagger animations for lists
-- Hover effects
-- Loading states
-- Progress indicators
-- Blob animations (background)
-```
-
-## 📊 Data Flow
-
-### Scan Workflow
-
-```
-1. User uploads repository
-   ↓
-2. Scanner component validates input
-   ↓
-3. Progress tracker simulates scanning phases
-   ↓
-4. Mock AI analysis generates issues
-   ↓
-5. Results stored in state
-   ↓
-6. Navigate to analysis view
-   ↓
-7. Display findings with visualizations
-```
-
-### Real-time Intelligence Flow (Production)
-
-```
-1. Project scanned → Extract dependencies
-   ↓
-2. Bright Data SERP API → Search CVE databases
-   ↓
-3. Web Unlocker → Access security advisories
-   ↓
-4. Scraping Browser → Gather exploit data
-   ↓
-5. Aggregate findings → Generate threat report
-   ↓
-6. AI correlates → Match with code issues
-   ↓
-7. Update dashboard → Real-time metrics
-```
-
-## 🎨 Design System
-
-### Color Palette
-
-```css
-Primary: Violet (violet-400 to violet-600)
-Secondary: Fuchsia (fuchsia-400 to fuchsia-600)
-Accent: Cyan (cyan-400 to cyan-600)
-Success: Emerald (emerald-400 to emerald-600)
-Warning: Yellow (yellow-400 to yellow-600)
-Danger: Red (red-400 to red-600)
-
-Backgrounds:
-- Slate-950 (darkest)
-- Slate-900 (dark)
-- Slate-800 (medium)
-
-Text:
-- White (primary text)
-- Slate-400 (secondary text)
-- Slate-500 (tertiary text)
-```
-
-### Typography
-
-```css
-Headings: Inter font family
-Body: Inter font family
-Code: Monaco, Consolas, monospace
-
-Sizes:
-- Display: 3xl-4xl
-- Heading: xl-2xl
-- Body: base
-- Caption: sm-xs
-```
-
-### Spacing
-
-Following Tailwind's 4px base scale:
-- Micro: 1-2 (4-8px)
-- Small: 3-4 (12-16px)
-- Medium: 6-8 (24-32px)
-- Large: 12-16 (48-64px)
-
-## 🔧 State Management
-
-### Local State (useState)
-
-Used for:
-- Form inputs
-- UI toggles
-- Modal visibility
-- Component-specific data
-
-### URL State (React Router)
-
-Used for:
-- Active page
-- Project ID
-- Analysis view
-- Filter parameters
-
-### Mock Data Store
-
-Location: `/src/app/lib/mockData.ts`
-
-Contains:
-- Project listings
-- Issue details
-- Scan history
-- Activity logs
-- Threat intelligence
-
-## 🚀 Performance Optimizations
-
-### Code Splitting
-
-```typescript
-// Automatic route-based splitting via React Router
-// Monaco Editor loaded on-demand
-// Chart libraries loaded per page
-```
-
-### Lazy Loading
-
-```typescript
-// Images loaded with lazy attribute
-// Components rendered on visibility
-// Monaco Editor deferred initialization
-```
-
-### Memoization
-
-```typescript
-// Chart data memoized with useMemo
-// Callback functions with useCallback
-// Expensive computations cached
-```
-
-### Asset Optimization
-
-```typescript
-// SVG icons from Lucide (tree-shakeable)
-// CSS purged with Tailwind
-// Vite optimizes bundle size
-```
-
-## 🔌 API Integration Points
-
-### OpenAI API (Code Analysis)
-
-```typescript
-Endpoint: https://api.openai.com/v1/chat/completions
-Purpose: AI code analysis and fix generation
-Models: GPT-4, GPT-3.5-turbo
-Rate Limits: Handled with exponential backoff
-```
-
-### Bright Data APIs
-
-#### 1. SERP API
-```typescript
-Endpoint: https://api.brightdata.com/serp
-Purpose: Search CVE databases and security sites
-Parameters: Query, filters, pagination
-```
-
-#### 2. Web Unlocker
-```typescript
-Endpoint: https://api.brightdata.com/unlocker
-Purpose: Access protected security resources
-Features: JavaScript rendering, cookie handling
-```
-
-#### 3. Scraping Browser
-```typescript
-Endpoint: https://api.brightdata.com/scraper
-Purpose: Automated browser for threat intelligence
-Capabilities: Full page rendering, anti-bot bypass
-```
-
-#### 4. MCP Server
-```typescript
-Endpoint: https://api.brightdata.com/mcp
-Purpose: Multi-channel proxy management
-Features: Rotating IPs, geo-targeting
-```
-
-### GitHub API
-
-```typescript
-Endpoint: https://api.github.com
-Purpose: Repository cloning and metadata
-Authentication: Personal Access Token
-Rate Limits: 5000 requests/hour (authenticated)
-```
-
-## 🛡️ Security Architecture
-
-### API Key Management
-
-```typescript
-// Never expose keys in client code
-// Use server-side proxy in production
-// Implement key rotation
-// Monitor usage and anomalies
-```
-
-### Data Privacy
-
-```typescript
-// No PII stored in client
-// Scan results kept in memory only
-// No persistent local storage
-// Session-based state management
-```
-
-### Content Security Policy
-
-```typescript
-// Restrict script sources
-// Allow only trusted CDNs
-// Block inline scripts (except allowlist)
-// Enforce HTTPS
-```
-
-## 📱 Responsive Design
-
-### Breakpoints
-
-```css
-Mobile: < 640px
-Tablet: 640px - 1024px
-Desktop: > 1024px
-```
-
-### Adaptive Layouts
-
-```typescript
-- Sidebar: Collapsible on mobile
-- Charts: Responsive containers
-- Tables: Horizontal scroll
-- Cards: Grid to stack transition
-```
-
-## 🧪 Testing Strategy (Future)
-
-### Unit Tests
-```typescript
-// Component rendering
-// Utility functions
-// Data transformations
-// Mock API responses
-```
-
-### Integration Tests
-```typescript
-// User workflows
-// API integration
-// State management
-// Navigation flows
-```
-
-### E2E Tests
-```typescript
-// Complete scan workflow
-// Settings configuration
-// Report generation
-// Multi-page navigation
-```
-
-## 📦 Build Pipeline
-
-### Development
-
-```bash
-Vite Dev Server
-- Hot Module Replacement (HMR)
-- Fast refresh for React
-- Source maps
-- Mock API responses
-```
-
-### Production
-
-```bash
-Vite Build
-- Minification
-- Tree shaking
-- Code splitting
-- Asset hashing
-- Bundle analysis
-```
-
-## 🔄 Future Enhancements
-
-### Backend Integration
-
-```typescript
-- PostgreSQL database for scan history
-- Prisma ORM for type-safe queries
-- WebSocket for live updates
-- Redis for caching
-```
-
-### Advanced Features
-
-```typescript
-- Vector search for code similarity
-- RAG over codebases
-- Dependency graph visualization
-- Team collaboration features
-- Scheduled scans
-- Email notifications
-```
-
-### Scalability
-
-```typescript
-- Worker threads for analysis
-- Queue system for scans
-- Horizontal scaling
-- CDN for assets
-- Edge caching
-```
-
-## 📚 Technology Stack Summary
-
-| Layer | Technology | Purpose |
-|-------|------------|---------|
-| Framework | React 18 | UI rendering |
-| Language | TypeScript | Type safety |
-| Styling | TailwindCSS v4 | Utility-first CSS |
-| Animation | Motion (Framer Motion) | Smooth transitions |
-| Routing | React Router 7 | Multi-page navigation |
-| Charts | Recharts | Data visualization |
-| Editor | Monaco Editor | Code display |
-| Icons | Lucide React | Icon library |
-| UI Primitives | Radix UI | Accessible components |
-| Build Tool | Vite | Fast development |
-| Package Manager | pnpm | Efficient dependencies |
-
-## 🎓 Design Patterns
-
-### Component Composition
-
-```typescript
-// Atomic design approach
-- Atoms: Button, Input, Badge
-- Molecules: StatsCard, FileTreeItem
-- Organisms: Dashboard, Scanner
-- Templates: Root layout
-- Pages: Route components
-```
-
-### Separation of Concerns
-
-```typescript
-- Components: UI rendering
-- Hooks: Business logic
-- Utils: Pure functions
-- Data: Mock/API layer
-```
-
-### Progressive Enhancement
-
-```typescript
-- Core functionality works without JS
-- Enhanced with animations
-- Optimized for modern browsers
-- Graceful degradation
-```
-
-## 📖 References
-
-- [React Documentation](https://react.dev)
-- [TailwindCSS v4](https://tailwindcss.com)
-- [React Router](https://reactrouter.com)
-- [Radix UI](https://radix-ui.com)
-- [Recharts](https://recharts.org)
-- [Monaco Editor](https://microsoft.github.io/monaco-editor)
-- [Bright Data](https://brightdata.com)
+This document describes the technical architecture, system design principles, data pipelines, and AI orchestration model behind the CodeSage platform.
 
 ---
 
-**Last Updated**: May 22, 2026
-**Version**: 1.0.0
+# 🌟 System Overview
+
+CodeSage is an autonomous AI-powered DevSecOps platform designed to analyze enterprise-scale codebases, correlate findings with live web threat intelligence, and determine deployment readiness in real time.
+
+The platform is architected as a decoupled, multi-agent intelligence system unified under a single deployable Node.js/Express application.
+
+CodeSage combines:
+
+* AI-powered code reasoning
+* real-time cybersecurity intelligence
+* deployment risk analysis
+* live web vulnerability correlation
+* autonomous remediation workflows
+
+to function as an enterprise CI/CD deployment gatekeeper.
+
+---
+
+# 🎯 Architectural Goals
+
+The system was designed around the following engineering goals:
+
+* Real-time AI-powered security analysis
+* Scalable multi-repository processing
+* Live web threat intelligence integration
+* Enterprise-ready CI/CD compatibility
+* Deterministic AI outputs
+* Low-latency realtime frontend updates
+* Modular agent orchestration
+* Production-grade deployment simplicity
+
+---
+
+# 📐 High-Level Architecture Diagram
+
+```text
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                            CodeSage Unified Platform                         │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+
+        ┌──────────────────────────── FRONTEND ────────────────────────────┐
+
+        ┌──────────────────────────────────────────────────────────────────┐
+        │                         React 18 + Vite                         │
+        │------------------------------------------------------------------│
+        │ • Dashboard & Risk Visualizations                               │
+        │ • Repository Upload Interface                                   │
+        │ • Live Scanner Overlay                                           │
+        │ • AI Reasoning Feed                                               │
+        │ • Deployment Verdict Panel                                        │
+        │ • Realtime Security Metrics                                       │
+        └───────────────────────▲──────────────────────────────────────────┘
+                                │
+                                │ HTTP + Realtime Events
+                                │
+        ┌───────────────────────┴──────────────────────────────────────────┐
+        │                     Express Unified Backend                       │
+        │------------------------------------------------------------------│
+        │ • REST API Layer                                                  │
+        │ • Static Frontend Hosting                                         │
+        │ • Webhook Endpoints                                               │
+        │ • Repository Ingestion                                            │
+        │ • Authentication Middleware                                       │
+        │ • Scan Orchestration                                              │
+        └───────────────────────▲──────────────────────────────────────────┘
+                                │
+                                │ Async Scan Jobs
+                                │
+        ┌───────────────────────┴──────────────────────────────────────────┐
+        │                    Multi-Agent Orchestrator                       │
+        │------------------------------------------------------------------│
+        │ • Code Analyzer Agent                                             │
+        │ • Dependency Audit Agent                                          │
+        │ • Threat Intelligence Agent                                       │
+        │ • Auto-Fix Generation Agent                                       │
+        │ • Deployment Verdict Engine                                       │
+        └───────────────┬──────────────────────────────┬───────────────────┘
+                        │                              │
+                        │                              │
+          ┌─────────────▼─────────────┐   ┌────────────▼────────────┐
+          │        OpenRouter         │   │       Bright Data        │
+          │---------------------------│   │---------------------------│
+          │ • Llama 3.1               │   │ • SERP API               │
+          │ • Mistral                 │   │ • Web Unlocker           │
+          │ • DeepSeek                │   │ • Scraping Browser       │
+          │ • Structured JSON Output  │   │ • Live Web Intelligence  │
+          └─────────────┬─────────────┘   └────────────┬────────────┘
+                        │                              │
+                        └──────────────┬───────────────┘
+                                       │
+                        ┌──────────────▼──────────────┐
+                        │     Supabase PostgreSQL      │
+                        │------------------------------│
+                        │ • Projects                   │
+                        │ • Issues                     │
+                        │ • Scan Results               │
+                        │ • Threat Intelligence        │
+                        │ • Deployment Verdicts        │
+                        └──────────────▲──────────────┘
+                                       │
+                                       │ Realtime Broadcast
+                                       │
+                        ┌──────────────┴──────────────┐
+                        │      Supabase Realtime       │
+                        │------------------------------│
+                        │ • Live Scan Progress         │
+                        │ • Threat Alerts              │
+                        │ • AI Reasoning Updates       │
+                        │ • Deployment Status Events   │
+                        └──────────────────────────────┘
+```
+
+---
+
+# 🔄 Unified System Data Flow
+
+## 1. Unified Express Architecture
+
+CodeSage uses a unified Node.js/Express deployment architecture.
+
+The backend:
+
+* serves the React/Vite frontend,
+* exposes REST APIs,
+* handles webhook integrations,
+* orchestrates AI agents,
+* and streams realtime events.
+
+This architecture:
+
+* eliminates frontend/backend deployment complexity,
+* removes CORS overhead,
+* simplifies CI/CD pipelines,
+* and enables single-container deployment.
+
+---
+
+## 2. Repository Ingestion Pipeline
+
+Repositories can be:
+
+* uploaded as ZIP archives,
+* cloned from GitHub,
+* or connected through Git URLs.
+
+The ingestion pipeline:
+
+* recursively traverses repositories,
+* strips unnecessary directories (`node_modules`, `.git`, binaries, images),
+* extracts code files,
+* normalizes file structures,
+* and prepares optimized AI analysis chunks.
+
+This dramatically:
+
+* reduces token usage,
+* improves analysis speed,
+* and prevents LLM context overload.
+
+---
+
+## 3. Asynchronous Scan Orchestration
+
+All scans are processed asynchronously using background workers.
+
+This prevents:
+
+* API thread blocking,
+* frontend freezing,
+* and long-running request failures.
+
+The orchestration engine:
+
+* creates scan jobs,
+* distributes workloads to specialized agents,
+* tracks progress,
+* and streams realtime updates back to the UI.
+
+This architecture enables scalable concurrent repository analysis.
+
+---
+
+# 🤖 Multi-Agent Intelligence Architecture
+
+CodeSage uses a modular multi-agent AI orchestration system.
+
+Each agent specializes in a focused responsibility.
+
+---
+
+## 🔍 Code Analyzer Agent
+
+Responsibilities:
+
+* detect programming languages,
+* perform static analysis,
+* identify insecure patterns,
+* detect runtime risks,
+* identify logic vulnerabilities,
+* classify severity levels.
+
+The agent produces strict structured JSON outputs validated against predefined schemas.
+
+---
+
+## 📦 Dependency Audit Agent
+
+Responsibilities:
+
+* inspect dependency manifests,
+* analyze package versions,
+* detect vulnerable dependencies,
+* identify deprecated packages,
+* cross-reference ecosystem advisories.
+
+Supported ecosystems:
+
+* npm
+* PyPI
+* Maven
+* Composer
+* Cargo
+
+---
+
+## 🌐 Threat Intelligence Agent
+
+Responsibilities:
+
+* query live web intelligence,
+* correlate findings against CVEs,
+* detect active exploits,
+* inspect public advisories,
+* gather real-time vulnerability context.
+
+Powered by:
+
+* Bright Data SERP API
+* Bright Data Web Unlocker
+* Bright Data Scraping Browser
+
+Bright Data infrastructure enables:
+
+* resilient scraping,
+* CAPTCHA bypassing,
+* protected advisory access,
+* and large-scale live intelligence gathering.
+
+Without Bright Data, autonomous realtime vulnerability correlation would not be possible at scale.
+
+---
+
+## 🛠️ Auto-Fix Generation Agent
+
+Responsibilities:
+
+* generate remediation patches,
+* suggest secure alternatives,
+* patch vulnerable code,
+* fix insecure configurations,
+* maintain syntax correctness.
+
+The system:
+
+* preserves formatting,
+* minimizes destructive edits,
+* and validates generated outputs before persistence.
+
+---
+
+## 🚦 Deployment Verdict Engine
+
+Responsibilities:
+
+* aggregate scan intelligence,
+* calculate platform scores,
+* determine deployment readiness.
+
+Generated metrics:
+
+* Security Score
+* Reliability Score
+* Maintainability Score
+
+Possible verdicts:
+
+* PASS
+* WARN
+* BLOCK
+
+Critical vulnerabilities automatically trigger deployment blocking.
+
+---
+
+# 🧠 OpenRouter AI Layer
+
+CodeSage utilizes OpenRouter as the primary AI inference gateway.
+
+Advantages:
+
+* model flexibility,
+* reduced vendor lock-in,
+* access to multiple open-source LLMs,
+* scalable routing,
+* cost optimization.
+
+Supported models include:
+
+* Llama 3.1
+* Mistral
+* DeepSeek
+* Mixtral
+
+All AI responses:
+
+* use strict JSON schemas,
+* are validated before storage,
+* and are normalized for deterministic frontend rendering.
+
+This ensures:
+
+* CI/CD compatibility,
+* predictable integrations,
+* and enterprise-safe outputs.
+
+---
+
+# 🌐 Bright Data Intelligence Layer
+
+Bright Data powers the platform’s live web intelligence infrastructure.
+
+CodeSage leverages:
+
+* SERP API
+* Web Unlocker
+* Scraping Browser
+
+for:
+
+* CVE discovery,
+* exploit correlation,
+* vulnerability enrichment,
+* advisory scraping,
+* protected-source intelligence gathering.
+
+The system continuously cross-references:
+
+* GitHub advisories,
+* OWASP references,
+* CVE databases,
+* npm vulnerabilities,
+* PyPI advisories,
+* exploit discussions,
+* security blogs,
+* and public disclosure feeds.
+
+---
+
+# 🗄️ Database Architecture (Supabase)
+
+Supabase PostgreSQL acts as:
+
+* the primary relational database,
+* realtime event broadcaster,
+* and scan persistence layer.
+
+---
+
+## Core Tables
+
+### `projects`
+
+Stores:
+
+* repository metadata,
+* deployment verdicts,
+* scan timestamps,
+* aggregated scores.
+
+---
+
+### `issues`
+
+Stores:
+
+* vulnerabilities,
+* severity,
+* file paths,
+* remediation suggestions,
+* CVE mappings,
+* dependency intelligence.
+
+---
+
+### `scan_events`
+
+Stores:
+
+* realtime scan progress,
+* AI reasoning events,
+* websocket stream updates,
+* orchestration logs.
+
+---
+
+# ⚡ Realtime Event System
+
+Supabase Realtime streams:
+
+* scan progress,
+* live threat alerts,
+* AI reasoning logs,
+* deployment status updates,
+* vulnerability discoveries
+
+directly into the React frontend.
+
+This powers:
+
+* animated progress bars,
+* realtime counters,
+* live scan feeds,
+* cinematic scanning experiences.
+
+---
+
+# 🎨 Frontend Architecture
+
+The frontend follows a layered React architecture.
+
+---
+
+## Component Architecture
+
+```text
+Atoms
+ ├── Button
+ ├── Input
+ ├── Badge
+
+Molecules
+ ├── StatsCard
+ ├── SeverityBadge
+ ├── FileTreeItem
+
+Organisms
+ ├── Dashboard
+ ├── Scanner
+ ├── AnalysisPanel
+ ├── LiveScannerOverlay
+
+Templates
+ ├── Root Layout
+
+Pages
+ ├── Dashboard Page
+ ├── Repository Page
+ ├── Settings Page
+```
+
+---
+
+## Frontend Design Principles
+
+The UI emphasizes:
+
+* cybersecurity aesthetics,
+* glassmorphism,
+* realtime motion,
+* terminal-inspired interfaces,
+* cinematic feedback systems.
+
+Animations are powered by:
+
+* Framer Motion
+* Realtime streaming events
+* Incremental rendering
+
+---
+
+# 🔒 Security Design Principles
+
+CodeSage follows several secure engineering practices:
+
+* strict JSON validation,
+* isolated AI outputs,
+* sanitized repository ingestion,
+* dependency filtering,
+* secure environment variable handling,
+* webhook verification,
+* schema-based persistence validation.
+
+---
+
+# 🚀 Scalability Considerations
+
+The architecture is designed for future scalability through:
+
+* distributed scan workers,
+* queue-based orchestration,
+* horizontally scalable APIs,
+* isolated AI agents,
+* event-driven processing,
+* realtime streaming pipelines.
+
+Future infrastructure expansion may include:
+
+* Kubernetes orchestration
+* Redis queues
+* Distributed worker clusters
+* AI memory systems
+* SOC integrations
+
+---
+
+# 📖 Core Technologies & References
+
+* React 18
+* Vite
+* Express.js
+* Supabase
+* OpenRouter
+* Bright Data
+* TailwindCSS
+* Framer Motion
+* Monaco Editor
+* Recharts
+
+---
+
+# 🏁 Conclusion
+
+CodeSage demonstrates how autonomous AI systems become dramatically more powerful when connected to realtime web intelligence.
+
+By combining:
+
+* AI-powered reasoning,
+* live cybersecurity intelligence,
+* realtime orchestration,
+* and deployment automation,
+
+CodeSage transforms traditional static analysis into a continuously evolving enterprise deployment intelligence platform.
