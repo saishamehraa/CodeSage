@@ -4,10 +4,9 @@
   "version": "0.0.1",
   "type": "module",
   "scripts": {
-  "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:backend\"",
-  "build:frontend": "vite build",
-  "build:backend": "cd backend && npm install && tsc", 
   "build": "npm run build:frontend && npm run build:backend",
+  "build:frontend": "vite build",
+  "build:backend": "cd backend && npm install && npx tsc -p tsconfig.json",
   "start": "node backend/dist/index.js"
 },
   "dependencies": {
