@@ -1,47 +1,82 @@
 //src/app/components/Dashboard.tsx
 import { motion } from "motion/react";
-import { Shield, AlertTriangle, CheckCircle, XCircle, TrendingUp, Activity, Clock, Code2, Database, Search } from "lucide-react";
+import { Shield, AlertTriangle, CheckCircle, XCircle, TrendingUp, Activity, Clock, Code2, Database, Search, Loader2 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import { Progress } from "./ui/progress";
 import { Link } from "react-router";
-import { Project } from "../lib/mockData";
-import { api } from "../lib/api";
 import { useEffect, useState } from "react";
+import { api } from "../lib/api";
 import { 
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, 
-  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend 
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer 
 } from "recharts";
-import { mockProjects, activityLog, threatIntelligence } from "../lib/mockData";
+// Keeping activityLog and threatIntel as mocks for the dashboard visualization
+import { activityLog, threatIntelligence } from "../lib/mockData";
 
 export function Dashboard() {
+  const [projects, setProjects] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch real projects from Supabase
+  useEffect(() => {
+    async function loadDashboardData() {
+      try {
+        const data = await api.getProjects();
+        setProjects(data || []);
+      } catch (error) {
+        console.error("Failed to load projects:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadDashboardData();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <div className="text-center space-y-4">
+          <Loader2 className="w-12 h-12 text-violet-500 animate-spin mx-auto" />
+          <p className="text-slate-400">Loading CodeSage Intelligence...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Calculate stats dynamically from DB data
+  const totalCritical = projects.reduce((sum, p) => sum + (p.critical_issues || 0), 0);
+  const avgSecurityScore = projects.length 
+    ? Math.round(projects.reduce((sum, p) => sum + (p.security_score || 0), 0) / projects.length)
+    : 0;
+
   const stats = [
     {
       title: "Total Projects",
-      value: mockProjects.length.toString(),
-      change: "+2 this week",
+      value: projects.length.toString(),
+      change: "Active in database",
       icon: Code2,
       color: "from-violet-500 to-purple-500",
     },
     {
       title: "Critical Issues",
-      value: mockProjects.reduce((sum, p) => sum + p.criticalIssues, 0).toString(),
-      change: "-5 from last scan",
+      value: totalCritical.toString(),
+      change: "Across all repos",
       icon: AlertTriangle,
       color: "from-red-500 to-orange-500",
     },
     {
-      title: "Security Score",
-      value: "78%",
-      change: "+3% improvement",
+      title: "Avg Security Score",
+      value: `${avgSecurityScore}%`,
+      change: "Platform wide",
       icon: Shield,
       color: "from-cyan-500 to-blue-500",
     },
     {
       title: "Scans Today",
-      value: "12",
-      change: "4 in progress",
+      value: projects.filter(p => new Date(p.last_scan).toDateString() === new Date().toDateString()).length.toString(),
+      change: "Recently analyzed",
       icon: Activity,
       color: "from-emerald-500 to-green-500",
     },
@@ -52,11 +87,11 @@ export function Dashboard() {
     { date: "Tue", security: 76, reliability: 84, issues: 38 },
     { date: "Wed", security: 74, reliability: 81, issues: 52 },
     { date: "Thu", security: 77, reliability: 85, issues: 34 },
-    { date: "Fri", security: 78, reliability: 86, issues: 28 },
+    { date: "Fri", security: avgSecurityScore || 78, reliability: 86, issues: totalCritical || 28 }, // Tie last day to real data
   ];
 
   const issueDistribution = [
-    { name: "Critical", value: 16, color: "#ef4444" },
+    { name: "Critical", value: totalCritical || 16, color: "#ef4444" },
     { name: "High", value: 35, color: "#f97316" },
     { name: "Medium", value: 48, color: "#eab308" },
     { name: "Low", value: 24, color: "#3b82f6" },
@@ -238,57 +273,63 @@ export function Dashboard() {
               </Link>
             </CardHeader>
             <CardContent className="space-y-4">
-              {mockProjects.slice(0, 3).map((project) => (
-                <Link key={project.id} to={`/analysis/${project.id}`}>
-                  <motion.div
-                    whileHover={{ x: 4 }}
-                    className="p-4 rounded-lg bg-slate-800/50 border border-white/10 hover:border-white/20 transition-all cursor-pointer"
-                  >
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex-1">
-                        <h4 className="font-semibold text-white mb-1">{project.name}</h4>
-                        <p className="text-xs text-slate-400">{project.repository}</p>
-                      </div>
-                      <Badge className={`${getStatusColor(project.status)} border`}>
-                        <div className="flex items-center gap-1">
-                          {getStatusIcon(project.status)}
-                          <span className="uppercase text-xs">{project.status}</span>
+              {projects.length === 0 ? (
+                <div className="text-center py-8 text-slate-500">
+                  No projects scanned yet. <Link to="/scanner" className="text-violet-400 hover:underline">Start a scan</Link>
+                </div>
+              ) : (
+                projects.slice(0, 3).map((project) => (
+                  <Link key={project.id} to={`/analysis/${project.id}`}>
+                    <motion.div
+                      whileHover={{ x: 4 }}
+                      className="p-4 rounded-lg bg-slate-800/50 border border-white/10 hover:border-white/20 transition-all cursor-pointer"
+                    >
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex-1">
+                          <h4 className="font-semibold text-white mb-1">{project.name}</h4>
+                          <p className="text-xs text-slate-400">{project.repository}</p>
                         </div>
-                      </Badge>
-                    </div>
-                    <div className="grid grid-cols-3 gap-4 mb-3">
-                      <div>
-                        <p className="text-xs text-slate-500 mb-1">Security</p>
-                        <div className="flex items-center gap-2">
-                          <Progress value={project.securityScore} className="flex-1 h-1" />
-                          <span className="text-xs text-white font-medium">{project.securityScore}%</span>
+                        <Badge className={`${getStatusColor(project.status)} border`}>
+                          <div className="flex items-center gap-1">
+                            {getStatusIcon(project.status)}
+                            <span className="uppercase text-xs">{project.status}</span>
+                          </div>
+                        </Badge>
+                      </div>
+                      <div className="grid grid-cols-3 gap-4 mb-3">
+                        <div>
+                          <p className="text-xs text-slate-500 mb-1">Security</p>
+                          <div className="flex items-center gap-2">
+                            <Progress value={project.security_score} className="flex-1 h-1" />
+                            <span className="text-xs text-white font-medium">{project.security_score || 0}%</span>
+                          </div>
+                        </div>
+                        <div>
+                          <p className="text-xs text-slate-500 mb-1">Reliability</p>
+                          <div className="flex items-center gap-2">
+                            <Progress value={project.reliability_score} className="flex-1 h-1" />
+                            <span className="text-xs text-white font-medium">{project.reliability_score || 0}%</span>
+                          </div>
+                        </div>
+                        <div>
+                          <p className="text-xs text-slate-500 mb-1">Issues</p>
+                          <div className="flex items-center gap-1">
+                            <AlertTriangle className="w-3 h-3 text-orange-400" />
+                            <span className="text-xs text-white font-medium">{project.total_issues || 0}</span>
+                            {project.critical_issues > 0 && (
+                              <span className="text-xs text-red-400">({project.critical_issues} critical)</span>
+                            )}
+                          </div>
                         </div>
                       </div>
-                      <div>
-                        <p className="text-xs text-slate-500 mb-1">Reliability</p>
-                        <div className="flex items-center gap-2">
-                          <Progress value={project.reliabilityScore} className="flex-1 h-1" />
-                          <span className="text-xs text-white font-medium">{project.reliabilityScore}%</span>
-                        </div>
+                      <div className="flex items-center gap-2 text-xs text-slate-500">
+                        <Clock className="w-3 h-3" />
+                        <span>{new Date(project.last_scan).toLocaleString()}</span>
                       </div>
-                      <div>
-                        <p className="text-xs text-slate-500 mb-1">Issues</p>
-                        <div className="flex items-center gap-1">
-                          <AlertTriangle className="w-3 h-3 text-orange-400" />
-                          <span className="text-xs text-white font-medium">{project.totalIssues}</span>
-                          {project.criticalIssues > 0 && (
-                            <span className="text-xs text-red-400">({project.criticalIssues} critical)</span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 text-xs text-slate-500">
-                      <Clock className="w-3 h-3" />
-                      <span>{new Date(project.lastScan).toLocaleString()}</span>
-                    </div>
-                  </motion.div>
-                </Link>
-              ))}
+                    </motion.div>
+                  </Link>
+                ))
+              )}
             </CardContent>
           </Card>
         </motion.div>
