@@ -6,7 +6,8 @@ import path from 'path';
 import scanRouter from './routes/scan';
 
 // Load environment variables
-dotenv.config({ path: './.env' });
+dotenv.config({ path: path.join(__dirname, '../.env') });
+console.log("DEBUG: Is OpenRouter Key loaded?", process.env.OPENROUTER_API_KEY ? "YES" : "NO");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
