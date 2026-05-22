@@ -1,12 +1,12 @@
 // backend/src/workers/scanEngine.ts
 import { createClient } from '@supabase/supabase-js';
-import { analyzeCodeFile } from '../services/ai/codeAnalyzer';
+import { orchestrateAnalysis } from '../services/ai/orchestrator';
 import { searchLiveThreatIntel } from '../services/brightdata/threatIntel';
 
 // Use the Service Role key to bypass RLS in the backend
 const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
 
-// Helper to respect API rate limits (essential for free-tier models)
+// Helper to respect API rate limits
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export async function runAutonomousScan(projectId: string, files: { name: string, content: string }[]) {
@@ -18,13 +18,11 @@ export async function runAutonomousScan(projectId: string, files: { name: string
 
   for (let i = 0; i < totalFiles; i++) {
     const file = files[i];
-    // Progress for code analysis phase (first 80%)
     const progress = Math.round(((i + 1) / totalFiles) * 80); 
 
-    // Throttling to prevent API rate limiting
     await sleep(400);
 
-    // 1. Update UI: Scanning file
+    // 1. Notify UI of analysis phase
     await channel.send({
       type: 'broadcast',
       event: 'progress_update',
@@ -32,20 +30,21 @@ export async function runAutonomousScan(projectId: string, files: { name: string
         progress, 
         phase: 'AI Code Analysis & Vulnerability Detection', 
         file: file.name,
-        reasoning: `Executing neural analysis on AST structures in ${file.name}...` 
+        reasoning: `Executing neural analysis on ${file.name}...` 
       },
     });
 
     try {
-      // 2. Run OpenAI Agent (via OpenRouter)
-      const issues = await analyzeCodeFile(file.name, file.content);
+      // 2. Run Multi-Model Orchestrated Analysis
+      // This automatically tries models in chain and falls back to local Gemma
+      const issues = await orchestrateAnalysis(file.name, file.content);
 
       // 3. Process found issues
       for (const issue of issues) {
         let cveId = null;
         let aiReasoning = `[DISCOVERED] ${issue.severity.toUpperCase()} risk in ${file.name}: ${issue.issue_type}`;
 
-        // 4. If it's a high/critical risk, trigger Bright Data for live intel
+        // 4. If critical/high, trigger Threat Intelligence Sync
         if (issue.severity === 'critical' || issue.severity === 'high') {
           criticalCount++;
           
@@ -56,14 +55,14 @@ export async function runAutonomousScan(projectId: string, files: { name: string
               progress, 
               phase: 'Web Threat Intelligence Sync', 
               file: file.name,
-              reasoning: `[BRIGHT DATA ENGAGED] Searching live web for exploits matching: ${issue.issue_type}...` 
+              reasoning: `[BRIGHT DATA] Searching live exploits for: ${issue.issue_type}...` 
             },
           });
 
           const intel = await searchLiveThreatIntel(issue.issue_type);
           if (intel && intel.cve_found) {
             cveId = "ACTIVE-EXPLOIT-DETECTED";
-            aiReasoning += `\n[ALERT] Live exploit discussions found via SERP API: ${intel.snippet}`;
+            aiReasoning += `\n[ALERT] Live exploit discussions found: ${intel.snippet}`;
           }
         }
 
@@ -80,7 +79,7 @@ export async function runAutonomousScan(projectId: string, files: { name: string
           cve: cveId
         });
 
-        // Stream the AI's internal monologue
+        // Stream logs to UI
         await channel.send({
           type: 'broadcast',
           event: 'progress_update',
@@ -88,13 +87,13 @@ export async function runAutonomousScan(projectId: string, files: { name: string
         });
       }
     } catch (error) {
-      console.error(`Error analyzing ${file.name}:`, error);
+      console.error(`Analysis failed for ${file.name} across all fallbacks:`, error);
       await channel.send({
         type: 'broadcast',
         event: 'progress_update',
-        payload: { progress, phase: 'Warning', file: file.name, reasoning: 'File analysis skipped due to processing error.' }
+        payload: { progress, phase: 'Warning', file: file.name, reasoning: 'File analysis skipped: all AI models unavailable.' }
       });
-      continue; // Move to the next file if one fails
+      continue; 
     }
   }
 
@@ -106,7 +105,7 @@ export async function runAutonomousScan(projectId: string, files: { name: string
       progress: 90, 
       phase: 'Finalizing Deployment Verdict', 
       file: 'System',
-      reasoning: `Analysis complete. Calculating final deployment scores...` 
+      reasoning: `Analysis complete. Calculating final risk scores...` 
     },
   });
 
@@ -126,7 +125,7 @@ export async function runAutonomousScan(projectId: string, files: { name: string
   await channel.send({
     type: 'broadcast',
     event: 'progress_update',
-    payload: { progress: 100, phase: 'Scan Complete', file: 'N/A', reasoning: 'Scan finished.' }
+    payload: { progress: 100, phase: 'Scan Complete', file: 'N/A', reasoning: 'Scan finished successfully.' }
   });
 
   await supabase.removeChannel(channel);
