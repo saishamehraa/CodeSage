@@ -52,7 +52,7 @@ const handleStartScan = async () => {
     }
 
     // Hit your new Node.js endpoint
-    const response = await fetch('http://localhost:3000/api/start-scan', {
+    const response = await fetch(import.meta.env.VITE_API_URL || 'http://localhost:3000/api/start-scan', {
       method: 'POST',
       body: formData,
     });
