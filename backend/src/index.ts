@@ -1,13 +1,16 @@
 // backend/src/index.ts
-import express from 'express';
-import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
+
+dotenv.config({ path: path.join(__dirname, '../.env') });
+
+import express from 'express';
+import cors from 'cors';
 import scanRouter from './routes/scan';
 
-// Load environment variables
-dotenv.config({ path: path.join(__dirname, '../.env') });
-console.log("DEBUG: Is OpenRouter Key loaded?", process.env.OPENROUTER_API_KEY ? "YES" : "NO");
+// 3. Debugging
+console.log("✅ Dotenv loaded. OpenRouter key found:", !!process.env.OPENROUTER_API_KEY);
+
 
 const app = express();
 const PORT = process.env.PORT || 3000;
