@@ -3,13 +3,18 @@ import axios from 'axios';
 
 const BRIGHT_DATA_SERP_URL = 'https://api.brightdata.com/serp/req';
 const BD_API_KEY = process.env.BRIGHTDATA_API_KEY;
+// IMPORTANT: You must define your zone here
+const BD_ZONE = process.env.BRIGHTDATA_ZONE || 'YOUR_ZONE_NAME'; 
 
 export async function searchLiveThreatIntel(query: string) {
   try {
-    // This triggers Bright Data's SERP API to fetch real-time Google results
     const response = await axios.post(
       BRIGHT_DATA_SERP_URL,
-      { country: 'us', query: `site:cve.mitre.org OR site:github.com/advisories "${query}" exploit` },
+      { 
+        country: 'us', 
+        query: `site:cve.mitre.org OR site:github.com/advisories "${query}" exploit`,
+        zone: BD_ZONE // Added required zone parameter
+      },
       {
         headers: {
           'Authorization': `Bearer ${BD_API_KEY}`,
@@ -17,10 +22,6 @@ export async function searchLiveThreatIntel(query: string) {
         },
       }
     );
-
-    // In a real implementation, Bright Data returns a response ID, 
-    // and you poll or use a webhook to get the final JSON results.
-    // For the hackathon demo, we parse the returned organic results:
     
     const results = response.data.organic || [];
     if (results.length > 0) {
@@ -32,8 +33,8 @@ export async function searchLiveThreatIntel(query: string) {
     }
     
     return { cve_found: false };
-  } catch (error) {
-    console.error("Bright Data SERP API Error:", error);
+  } catch (error: any) {
+    console.error("Bright Data SERP API Error:", error.response?.data || error.message);
     return { cve_found: false };
   }
 }
