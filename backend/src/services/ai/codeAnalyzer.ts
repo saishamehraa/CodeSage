@@ -1,4 +1,3 @@
-// backend/src/services/ai/codeAnalyzer.ts
 import OpenAI from 'openai';
 
 const openai = new OpenAI({
@@ -17,7 +16,7 @@ export async function analyzeCodeFile(fileName: string, content: string, model: 
       messages: [
         { 
           role: "system", 
-          content: "You are a senior security engineer. Analyze the code for vulnerabilities. Return ONLY valid JSON format: { \"issues\": [ { \"line_number\": number, \"severity\": \"critical\" | \"high\" | \"medium\" | \"low\", \"issue_type\": string, \"message\": string, \"description\": string, \"fix_suggestion\": string } ] }. Do not include any conversational text." 
+          content: "You are a senior security engineer. Analyze the code for vulnerabilities. Return ONLY valid JSON format: { \"issues\": [ { \"line_number\": number, \"severity\": \"critical\" | \"high\" | \"medium\" | \"low\", \"issue_type\": string, \"message\": string, \"description\": string, \"fix_suggestion\": string } ] }. Do not include any conversational text. Keep explanations concise to avoid token limits." 
         },
         { 
           role: "user", 
@@ -30,8 +29,16 @@ export async function analyzeCodeFile(fileName: string, content: string, model: 
     const contentStr = response.choices[0].message.content || '{"issues": []}';
     const cleanedJson = contentStr.replace(/```json\s*|\s*```/g, '').trim();
     
-    return JSON.parse(cleanedJson).issues || [];
+    try {
+      // JSON Safety Net: Catch "Unterminated string" errors
+      const parsed = JSON.parse(cleanedJson);
+      return parsed.issues || [];
+    } catch (parseError) {
+      console.warn(`[Analyzer] JSON parse failed for model ${model}. Cut off output.`);
+      throw new Error("Invalid or incomplete JSON returned by model."); 
+    }
+    
   } catch (error) {
-    throw error;
+    throw error; // Bubbles up to Orchestrator
   }
 }

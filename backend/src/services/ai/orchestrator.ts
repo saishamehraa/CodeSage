@@ -1,8 +1,6 @@
-// backend/src/services/ai/orchestrator.ts
 import { analyzeCodeFile } from './codeAnalyzer';
 import axios from 'axios';
 
-// These IDs are verified OpenRouter free-tier models. 
 const MODEL_CHAIN = [
   "google/gemini-2.0-flash-lite-001",
   "meta-llama/llama-3.3-70b-instruct",
@@ -17,7 +15,6 @@ export async function orchestrateAnalysis(fileName: string, content: string) {
       return await analyzeCodeFile(fileName, content, model);
     } catch (error: any) {
       console.warn(`[Orchestrator] Model ${model} failed: ${error.message}`);
-      // Continue to next model if this one fails
     }
   }
 
@@ -27,32 +24,35 @@ export async function orchestrateAnalysis(fileName: string, content: string) {
   if (ngrokUrl) {
     console.log(`[Orchestrator] Cloud models failed. Falling back to local Ollama via Ngrok: ${ngrokUrl}`);
     try {
-      // Format the prompt explicitly for the local model
       const prompt = `You are a senior security engineer. Analyze the code for vulnerabilities. Return ONLY valid JSON format: { "issues": [ { "line_number": number, "severity": "critical" | "high" | "medium" | "low", "issue_type": "string", "message": "string", "description": "string", "fix_suggestion": "string" } ] }. Do not include any conversational text.
 
 File: ${fileName}
 Content: ${content}`;
 
       const response = await axios.post(
-        `${ngrokUrl.replace(/\/$/, '')}/api/generate`, // Removes trailing slash just in case
+        `${ngrokUrl.replace(/\/$/, '')}/api/generate`,
         {
-          model: 'gemma:2b', // Ensure this matches the model you pulled in Ollama
+          model: 'gemma:2b',
           prompt: prompt,
           stream: false
         },
         {
           headers: {
             'Content-Type': 'application/json',
-            'ngrok-skip-browser-warning': 'true' // CRITICAL: Bypasses Ngrok's free-tier warning page
+            'ngrok-skip-browser-warning': 'true'
           }
         }
       );
 
-      // Clean and parse the local model's output
       const contentStr = response.data.response || '{"issues": []}';
       const cleanedJson = contentStr.replace(/```json\s*|\s*```/g, '').trim();
 
-      return JSON.parse(cleanedJson).issues || [];
+      try {
+          return JSON.parse(cleanedJson).issues || [];
+      } catch (e) {
+          console.warn("[Orchestrator] Local model returned invalid JSON.");
+          return [];
+      }
     } catch (localError: any) {
       console.error(`[Orchestrator] Ngrok fallback failed: ${localError.message}`);
     }

@@ -1,19 +1,23 @@
-// backend/src/services/brightdata/threatIntel.ts
 import axios from 'axios';
 
 const BRIGHT_DATA_SERP_URL = 'https://api.brightdata.com/serp/req';
 const BD_API_KEY = process.env.BRIGHTDATA_API_KEY;
-// IMPORTANT: You must define your zone here
-const BD_ZONE = process.env.BRIGHTDATA_ZONE || 'YOUR_ZONE_NAME'; 
+const BD_ZONE = process.env.BRIGHTDATA_ZONE; 
 
 export async function searchLiveThreatIntel(query: string) {
+  // PRE-HACKATHON BYPASS: If you don't have credits/keys yet, skip safely.
+  if (!BD_API_KEY || !BD_ZONE || BD_API_KEY === 'placeholder') {
+    console.log(`[Bright Data] Skipped (Waiting for credits). Safe mock returned for: ${query}`);
+    return { cve_found: false };
+  }
+
   try {
     const response = await axios.post(
       BRIGHT_DATA_SERP_URL,
       { 
         country: 'us', 
         query: `site:cve.mitre.org OR site:github.com/advisories "${query}" exploit`,
-        zone: BD_ZONE // Added required zone parameter
+        zone: BD_ZONE
       },
       {
         headers: {
