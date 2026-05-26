@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { Upload, Github, Link as LinkIcon, Scan, Shield, Code2, Database, Sparkles, X } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
-import { Input } from "./ui/input";
+import { Input } from "./ui/input"; 
 import { Label } from "./ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { useNavigate } from "react-router";
@@ -16,17 +16,13 @@ export function Scanner() {
   const [uploadMethod, setUploadMethod] = useState<'upload' | 'github' | 'url'>('upload');
   const [repoUrl, setRepoUrl] = useState('');
   
-  // State to track the uploaded file
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  // Tracking live scan state
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
   
-  // Listen to the realtime progress if a project is active
   const { state: scanState } = useRealtimeScan(activeProjectId);
 
-  // Navigate automatically when scan progress hits 100
   useEffect(() => {
     if (activeProjectId && scanState.scanProgress >= 100) {
       const timer = setTimeout(() => {
@@ -36,12 +32,11 @@ export function Scanner() {
     }
   }, [scanState.scanProgress, activeProjectId, navigate]);
 
-  // Handle the file selection event
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       setSelectedFile(file);
-      e.target.value = ''; // Reset input
+      e.target.value = ''; 
     }
   };
 
@@ -49,7 +44,6 @@ export function Scanner() {
     if (uploadMethod === 'upload' && !selectedFile) return;
     if (uploadMethod !== 'upload' && !repoUrl) return;
 
-    // Reset state to ensure clean channel initialization
     setActiveProjectId(null);
 
     try {
@@ -62,8 +56,6 @@ export function Scanner() {
         formData.append('repoUrl', repoUrl);
       }
 
-      // --- NEW: GRAB SETTINGS FROM LOCAL STORAGE ---
-      // This proves to the judges that your Settings page works!
       const savedKeysStr = localStorage.getItem("codesage_api_keys");
       if (savedKeysStr) {
         try {
@@ -156,11 +148,14 @@ export function Scanner() {
                     </TabsList>
 
                     <TabsContent value="upload" className="mt-6">
-                      <div className="border-2 border-dashed border-white/10 rounded-lg p-12 text-center hover:border-violet-500/30 transition-all cursor-pointer">
-                        <Input 
+                      <div 
+                        className="border-2 border-dashed border-white/10 rounded-lg p-12 text-center hover:border-violet-500/30 transition-all cursor-pointer relative"
+                        onClick={() => fileInputRef.current?.click()}
+                      >
+                        <input 
                           id="zip-upload" 
                           type="file" 
-                          className="hidden" 
+                          style={{ display: 'none' }}
                           accept=".zip"
                           ref={fileInputRef}
                           onChange={handleFileChange}
@@ -170,20 +165,27 @@ export function Scanner() {
                           <>
                             <Upload className="w-12 h-12 text-slate-500 mx-auto mb-4" />
                             <h3 className="text-lg font-semibold text-white mb-2">Drop your ZIP file here</h3>
-                            <Button variant="outline" className="border-white/10 text-white mt-2" onClick={() => fileInputRef.current?.click()}>
+                            <Button variant="outline" className="border-white/10 text-white mt-2 pointer-events-none">
                               Browse Files
                             </Button>
                           </>
                         ) : (
-                          <div className="flex flex-col items-center justify-center space-y-4">
+                          <div className="flex flex-col items-center justify-center space-y-4" onClick={(e) => e.stopPropagation()}>
                             <div className="w-16 h-16 rounded-full bg-violet-500/20 flex items-center justify-center">
                               <Shield className="w-8 h-8 text-violet-400" />
                             </div>
                             <div>
-                              <h3 className="text-lg font-semibold text-white">{selectedFile.name}</h3>
-                              <p className="text-sm text-slate-400">{(selectedFile.size / 1024 / 1024).toFixed(2)} MB</p>
+                              <h3 className="text-lg font-semibold text-white">{selectedFile?.name}</h3>
+                              <p className="text-sm text-slate-400">{selectedFile?.size ? (selectedFile.size / 1024 / 1024).toFixed(2) : 0} MB</p>
                             </div>
-                            <Button variant="ghost" className="text-red-400 hover:text-red-300 hover:bg-red-500/10" onClick={() => setSelectedFile(null)}>
+                            <Button 
+                              variant="ghost" 
+                              className="text-red-400 hover:text-red-300 hover:bg-red-500/10 z-10 relative" 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedFile(null);
+                              }}
+                            >
                               <X className="w-4 h-4 mr-2" /> Remove File
                             </Button>
                           </div>
