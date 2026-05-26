@@ -36,13 +36,28 @@ export async function processZipBuffer(buffer: Buffer) {
 }
 
 // 2. Handle GitHub / Git URLs (Clone to Temp Directory)
-export async function processGitRepo(repoUrl: string) {
+// Added the optional githubToken argument to match scan.ts
+export async function processGitRepo(repoUrl: string, githubToken?: string) {
   const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'codesage-'));
   const files: { name: string; content: string }[] = [];
 
   try {
     const git = simpleGit();
-    await git.clone(repoUrl, tempDir, ['--depth', '1']); // Shallow clone for speed
+
+    // Inject the GitHub token into the URL so it can clone private repositories!
+    let cloneUrl = repoUrl;
+    if (githubToken && repoUrl.startsWith('https://')) {
+      try {
+        const urlObj = new URL(repoUrl);
+        // Formats as https://ghp_token@github.com/...
+        urlObj.username = githubToken; 
+        cloneUrl = urlObj.toString();
+      } catch (e) {
+        console.warn("Invalid GitHub URL provided, attempting to clone without token.");
+      }
+    }
+
+    await git.clone(cloneUrl, tempDir, ['--depth', '1']); // Shallow clone for speed
 
     // Recursive function to read directory contents
     async function readDir(dir: string, base: string = '') {
