@@ -1,15 +1,21 @@
+//backend/src/services/ai/codeAnalyzer.ts
 import OpenAI from 'openai';
 
-const openai = new OpenAI({
-  baseURL: 'https://openrouter.ai/api/v1',
-  apiKey: process.env.OPENROUTER_API_KEY || 'sk-or-v1-placeholder',
-  defaultHeaders: {
-    'HTTP-Referer': 'https://codesage.ai',
-    'X-Title': 'CodeSage',
-  }
-});
+// FIX 1: Add customApiKey as an optional parameter
+export async function analyzeCodeFile(fileName: string, content: string, model: string, customApiKey?: string) {
+  
+  // FIX 2: Dynamically create the client using the custom key or fallback to .env
+  const activeKey = customApiKey || process.env.OPENROUTER_API_KEY || 'sk-or-v1-placeholder';
+  
+  const openai = new OpenAI({
+    baseURL: 'https://openrouter.ai/api/v1',
+    apiKey: activeKey,
+    defaultHeaders: {
+      'HTTP-Referer': 'https://codesage.ai',
+      'X-Title': 'CodeSage',
+    }
+  });
 
-export async function analyzeCodeFile(fileName: string, content: string, model: string) {
   try {
     const response = await openai.chat.completions.create({
       model: model, 

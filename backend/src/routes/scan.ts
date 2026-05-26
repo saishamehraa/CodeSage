@@ -1,4 +1,3 @@
-// backend/src/routes/scan.ts
 import express from 'express';
 import multer from 'multer';
 import { createClient } from '@supabase/supabase-js';
@@ -12,7 +11,8 @@ const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SE
 
 router.post('/start-scan', upload.single('file'), async (req, res) => {
   try {
-    const { repoUrl, uploadMethod } = req.body;
+    // FIX 1: Extract the dynamic API keys sent from the frontend Settings
+    const { repoUrl, uploadMethod, openAiKey, brightDataKey, githubToken } = req.body;
     
     let files: { name: string; content: string }[] = [];
     let projectName = 'Local Upload';
@@ -23,7 +23,8 @@ router.post('/start-scan', upload.single('file'), async (req, res) => {
       files = await processZipBuffer(req.file.buffer);
       projectName = req.file.originalname;
     } else if ((uploadMethod === 'github' || uploadMethod === 'url') && repoUrl) {
-      files = await processGitRepo(repoUrl);
+      // FIX 2: Pass the optional githubToken to the ingestion service
+      files = await processGitRepo(repoUrl, githubToken);
       projectName = repoUrl.split('/').pop()?.replace('.git', '') || 'Git Repo';
       repositoryRef = repoUrl;
     } else {
@@ -48,9 +49,14 @@ router.post('/start-scan', upload.single('file'), async (req, res) => {
 
     if (error) throw error;
 
-    // 3. Fire-and-forget the background worker
-    // Notice there is no "await" here. This allows the HTTP request to finish.
-    runAutonomousScan(project.id, files).catch(err => {
+    // FIX 3: Bundle the keys, falling back to environment variables if UI settings are empty
+    const activeApiKeys = {
+      openAiKey: openAiKey || process.env.OPENROUTER_API_KEY,
+      brightDataKey: brightDataKey || process.env.BRIGHTDATA_API_KEY
+    };
+
+    // 3. Fire-and-forget the background worker (Now passing the API keys!)
+    runAutonomousScan(project.id, files, activeApiKeys).catch(err => {
       console.error(`Fatal error in background scan for project ${project.id}:`, err);
     });
 

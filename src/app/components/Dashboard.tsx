@@ -432,10 +432,12 @@ export function Dashboard() {
             Start New Scan
           </Button>
         </Link>
-        <Button variant="outline" className="border-white/10 text-white hover:bg-white/10">
-          <TrendingUp className="w-4 h-4 mr-2" />
-          View Reports
-        </Button>
+        <Link to="/scanner" className="flex-1"> 
+          <Button variant="outline" className="w-full border-white/10 text-white hover:bg-white/10">
+            <TrendingUp className="w-4 h-4 mr-2" />
+            View Reports
+          </Button>
+        </Link>
       </motion.div>
     </div>
   );
