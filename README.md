@@ -1,5 +1,22 @@
 # CodeSage - AI-Powered Enterprise DevSecOps Platform
 
+![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
+![Node.js](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)
+![Express](https://img.shields.io/badge/Express.js-000000?style=for-the-badge&logo=express&logoColor=white)
+![Supabase](https://img.shields.io/badge/Supabase-181818?style=for-the-badge&logo=supabase&logoColor=3ECF8E)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)
+![OpenRouter](https://img.shields.io/badge/OpenRouter-AI-7C3AED?style=for-the-badge)
+![Bright Data](https://img.shields.io/badge/Bright_Data-Web_Intelligence-FC6B3F?style=for-the-badge)
+![TailwindCSS](https://img.shields.io/badge/TailwindCSS-0F172A?style=for-the-badge&logo=tailwindcss&logoColor=38BDF8)
+![Framer Motion](https://img.shields.io/badge/Framer_Motion-000000?style=for-the-badge&logo=framer&logoColor=white)
+![OWASP](https://img.shields.io/badge/OWASP-Security-red?style=for-the-badge)
+![WebSockets](https://img.shields.io/badge/WebSockets-Realtime-1E293B?style=for-the-badge)
+![AI Agents](https://img.shields.io/badge/AI-Multi_Agent_System-8B5CF6?style=for-the-badge)
+![CI/CD](https://img.shields.io/badge/CI/CD-Deployment_Gatekeeper-22C55E?style=for-the-badge)
+![Hackathon](https://img.shields.io/badge/Web_Data_UNLOCKED-Hackathon-blueviolet?style=for-the-badge)
+![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
+
 ![CodeSage Banner](https://images.unsplash.com/photo-1555949963-aa79dcee981c?w=1200&h=400&fit=crop)
 
 CodeSage is an autonomous AI code reliability, cybersecurity, and deployment intelligence system that acts as a CI/CD gatekeeper for modern software teams.
