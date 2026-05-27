@@ -1,6 +1,9 @@
-//src/app/components/Dashboard.tsx
+// src/app/components/Dashboard.tsx
 import { motion } from "motion/react";
-import { Shield, AlertTriangle, CheckCircle, XCircle, TrendingUp, Activity, Clock, Code2, Database, Search, Loader2 } from "lucide-react";
+import { 
+  Shield, AlertTriangle, CheckCircle, XCircle, TrendingUp, 
+  Activity, Clock, Code2, Database, Search, Loader2, Brain, X 
+} from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
@@ -12,12 +15,16 @@ import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, 
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer 
 } from "recharts";
-// Keeping activityLog and threatIntel as mocks for the dashboard visualization
 import { activityLog, threatIntelligence } from "../lib/mockData";
 
 export function Dashboard() {
   const [projects, setProjects] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // COGNEE MEMORY STATE
+  const [isMemoryOpen, setIsMemoryOpen] = useState(false);
+  const [memoryInsights, setMemoryInsights] = useState<string | null>(null);
+  const [isLoadingMemory, setIsLoadingMemory] = useState(false);
 
   // Fetch real projects from Supabase
   useEffect(() => {
@@ -33,6 +40,31 @@ export function Dashboard() {
     }
     loadDashboardData();
   }, []);
+
+  // Fetch Historical Memory from Cognee Graph
+  const handleViewMemory = async () => {
+    setIsMemoryOpen(true);
+    setIsLoadingMemory(true);
+    setMemoryInsights(null);
+    
+    // Default to the most recent project, or a system fallback if empty
+    const targetRepo = projects.length > 0 ? projects[0].repository : "Global System Architecture";
+    
+    try {
+      const res = await fetch(`/api/memory/history?repoUrl=${encodeURIComponent(targetRepo)}`);
+      const data = await res.json();
+      if (data.success) {
+        setMemoryInsights(data.insights);
+      } else {
+        setMemoryInsights("Error retrieving memory graph.");
+      }
+    } catch (error) {
+      console.error("Failed to load AI memory", error);
+      setMemoryInsights("Failed to retrieve cognitive memory.");
+    } finally {
+      setIsLoadingMemory(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -87,7 +119,7 @@ export function Dashboard() {
     { date: "Tue", security: 76, reliability: 84, issues: 38 },
     { date: "Wed", security: 74, reliability: 81, issues: 52 },
     { date: "Thu", security: 77, reliability: 85, issues: 34 },
-    { date: "Fri", security: avgSecurityScore || 78, reliability: 86, issues: totalCritical || 28 }, // Tie last day to real data
+    { date: "Fri", security: avgSecurityScore || 78, reliability: 86, issues: totalCritical || 28 }, 
   ];
 
   const issueDistribution = [
@@ -126,7 +158,58 @@ export function Dashboard() {
   };
 
   return (
-    <div className="p-8 space-y-8">
+    <div className="p-8 space-y-8 relative">
+      
+      {/* COGNEE MEMORY MODAL */}
+      <AnimatePresence>
+        {isMemoryOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-slate-900 border border-violet-500/30 p-6 rounded-xl shadow-2xl max-w-lg w-full relative"
+            >
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="absolute top-4 right-4 text-slate-400 hover:text-white"
+                onClick={() => setIsMemoryOpen(false)}
+              >
+                <X className="w-5 h-5" />
+              </Button>
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 bg-violet-500/20 rounded-lg">
+                  <Brain className="w-6 h-6 text-violet-400" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-white">Cognee Security Memory</h3>
+                  <p className="text-xs text-slate-400">Historical Threat Correlation Graph</p>
+                </div>
+              </div>
+              
+              <div className="min-h-[150px] flex flex-col justify-center bg-slate-950 rounded-lg p-5 border border-white/5">
+                {isLoadingMemory ? (
+                  <div className="flex flex-col items-center justify-center text-violet-400">
+                    <Loader2 className="w-8 h-8 animate-spin mb-3" />
+                    <span className="text-sm">Querying Knowledge Graph...</span>
+                  </div>
+                ) : (
+                  <div className="text-sm text-slate-300 whitespace-pre-line leading-relaxed">
+                    {memoryInsights}
+                  </div>
+                )}
+              </div>
+              <div className="mt-6 flex justify-end">
+                <Button onClick={() => setIsMemoryOpen(false)} className="bg-violet-600 hover:bg-violet-700 text-white">
+                  Close Insights
+                </Button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
       {/* Header */}
       <div>
         <motion.h1 
@@ -266,11 +349,18 @@ export function Dashboard() {
                 <CardTitle className="text-white">Recent Scans</CardTitle>
                 <CardDescription>Latest project security assessments</CardDescription>
               </div>
-              <Link to="/scanner">
-                <Button variant="outline" size="sm" className="border-white/10 text-white hover:bg-white/10">
-                  View All
-                </Button>
-              </Link>
+              
+              {/* NEW: COGNEE MEMORY BUTTON */}
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleViewMemory}
+                className="border-violet-500/30 text-violet-400 hover:bg-violet-500/10 hover:text-violet-300"
+              >
+                <Brain className="w-4 h-4 mr-2" />
+                AI Memory Insights
+              </Button>
+
             </CardHeader>
             <CardContent className="space-y-4">
               {projects.length === 0 ? (

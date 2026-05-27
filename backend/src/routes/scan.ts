@@ -1,3 +1,4 @@
+//backend/src/routes/scan.ts
 import express from 'express';
 import multer from 'multer';
 import { createClient } from '@supabase/supabase-js';

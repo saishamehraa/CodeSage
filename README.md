@@ -8,6 +8,7 @@
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)
 ![OpenRouter](https://img.shields.io/badge/OpenRouter-AI-7C3AED?style=for-the-badge)
 ![Bright Data](https://img.shields.io/badge/Bright_Data-Web_Intelligence-FC6B3F?style=for-the-badge)
+![Cognee](https://img.shields.io/badge/Cognee-AI_Memory-000000?style=for-the-badge&logo=codeigniter&logoColor=white)
 ![TailwindCSS](https://img.shields.io/badge/TailwindCSS-0F172A?style=for-the-badge&logo=tailwindcss&logoColor=38BDF8)
 ![Framer Motion](https://img.shields.io/badge/Framer_Motion-000000?style=for-the-badge&logo=framer&logoColor=white)
 ![OWASP](https://img.shields.io/badge/OWASP-Security-red?style=for-the-badge)
@@ -40,6 +41,7 @@ It combines:
 - exploit awareness
 - autonomous fix generation
 - deployment risk assessment
+- long-term cognitive security memory
 
 to act as a real-time enterprise deployment gatekeeper.
 
@@ -49,6 +51,7 @@ If a dependency becomes actively exploited on the public web, CodeSage detects i
 
 - 🔍 **Multi-Agent AI Analysis** - Scans code line-by-line for OWASP vulnerabilities using OpenRouter (Llama-3.1/Mistral).
 - 🛡️ **Security Intelligence** - Live web threat detection via Bright Data APIs.
+- 🧠 **Persistent Security Memory** - Tracks historical vulnerabilities, recurring risks, and long-term security drift across previous deployments using **Cognee's Knowledge Graphs**.
 - 🎬 **Cinematic Real-time UI** - Supabase WebSockets stream the AI's internal reasoning directly to the frontend.
 - 🏗️ **Unified Architecture** - A single Node.js/Express server delivering a React Vite frontend and WebSocket API simultaneously.
 - 🔧 **Auto-Fix Engine** - AI-generated security patches and fixes.
@@ -74,6 +77,7 @@ If a dependency becomes actively exploited on the public web, CodeSage detects i
 - **OpenRouter** - Flexible access to high-performance open-source LLMs (Llama 3.1, Mistral, DeepSeek)
 - **Multi-Agent Architecture** - Specialized agents for code analysis, dependency auditing, threat intelligence, fix generation, and deployment verdicts
 - **Bright Data** - SERP API, Web Unlocker, and Scraping Browser for real-time vulnerability intelligence and exploit correlation
+- **Cognee** - Cognitive memory graph integration that tracks historical security drift and extracts long-term threat correlation insights across multiple scans.
 
 ## 📁 Project Structure
 
@@ -376,7 +380,7 @@ All security intelligence features leverage Bright Data APIs to:
 - SOC dashboard integrations
 - Slack/MS Teams alerting
 - Autonomous remediation pipelines
-- Agent memory for long-term security intelligence
+- ~~Agent memory for long-term security intelligence~~ ✅ **Shipped (Powered by Cognee)**
 
 ## 🌐 Why Bright Data?
 

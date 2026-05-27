@@ -1,6 +1,8 @@
+// backend/src/workers/scanEngine.ts
 import { createClient } from '@supabase/supabase-js';
 import { orchestrateAnalysis } from '../services/ai/orchestrator';
 import { searchLiveThreatIntel } from '../services/brightdata/threatIntel';
+import { addScanToMemory } from '../services/cognee/memoryEngine'; // NEW: Cognee Integration
 
 // Use the Service Role key to bypass RLS in the backend
 const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
@@ -8,7 +10,6 @@ const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SE
 // Helper to respect API rate limits
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-// FIX 1: Added activeApiKeys parameter to the function signature
 export async function runAutonomousScan(
   projectId: string, 
   files: { name: string, content: string }[], 
@@ -19,6 +20,9 @@ export async function runAutonomousScan(
 
   let criticalCount = 0;
   const totalFiles = files.length;
+  
+  // NEW: Track all issues found during this scan to send to memory later
+  let allDiscoveredIssues: any[] = []; 
 
   for (let i = 0; i < totalFiles; i++) {
     const file = files[i];
@@ -40,13 +44,15 @@ export async function runAutonomousScan(
 
     try {
       // 2. Run Multi-Model Orchestrated Analysis
-      // FIX 2: Pass the dynamic OpenAI/OpenRouter key to the orchestrator
       const issues = await orchestrateAnalysis(file.name, file.content, activeApiKeys.openAiKey);
 
       // 3. Process found issues
       for (const issue of issues) {
         let cveId = null;
         let aiReasoning = `[DISCOVERED] ${issue.severity.toUpperCase()} risk in ${file.name}: ${issue.issue_type}`;
+
+        // Save issue to our memory tracker
+        allDiscoveredIssues.push(issue);
 
         // 4. If critical/high, trigger Threat Intelligence Sync
         if (issue.severity === 'critical' || issue.severity === 'high') {
@@ -63,7 +69,6 @@ export async function runAutonomousScan(
             },
           });
 
-          // FIX 3: Pass the dynamic Bright Data key to the threat intel service
           const intel = await searchLiveThreatIntel(issue.issue_type, activeApiKeys.brightDataKey);
           
           if (intel && intel.cve_found) {
@@ -122,11 +127,23 @@ export async function runAutonomousScan(
     .update({ 
       status: finalStatus,
       security_score: finalStatus === 'block' ? 45 : 92,
-      total_issues: criticalCount,
+      total_issues: allDiscoveredIssues.length, // FIX: Use real total issues
       critical_issues: criticalCount,
       last_scan: new Date().toISOString()
     })
     .eq('id', projectId);
+
+  // --- NEW: COGNEE MEMORY INTEGRATION ---
+  const finalScanSummary = {
+    verdict: finalStatus,
+    issues: allDiscoveredIssues
+  };
+
+  // Fire and forget the memory storage to the Cognee graph
+  addScanToMemory(projectId, `Project-${projectId}`, finalScanSummary).catch(err => {
+    console.error(`[Scan Engine] Non-fatal Cognee memory error for ${projectId}:`, err);
+  });
+  // ---------------------------------------
 
   await channel.send({
     type: 'broadcast',

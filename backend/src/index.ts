@@ -8,9 +8,11 @@ import express from 'express';
 import cors from 'cors';
 import scanRouter from './routes/scan';
 
+// NEW: Import the Cognee memory engine
+import { getHistoricalDrift } from './services/cognee/memoryEngine';
+
 // 3. Debugging
 console.log("✅ Dotenv loaded. OpenRouter key found:", !!process.env.OPENROUTER_API_KEY);
-
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -22,6 +24,18 @@ app.use(express.urlencoded({ extended: true }));
 
 // 1. Mount API Routes FIRST
 app.use('/api', scanRouter);
+
+// NEW: Cognee Memory API Route
+// This powers the "View All Previous Analysis" button on the dashboard
+app.get('/api/memory/history', async (req, res) => {
+  const { repoUrl } = req.query;
+  if (!repoUrl) {
+    return res.status(400).json({ error: "Repository URL is required to fetch memory." });
+  }
+
+  const historicalInsights = await getHistoricalDrift(repoUrl as string);
+  res.json({ success: true, insights: historicalInsights });
+});
 
 // Health Check for Judges/Ping services
 app.get('/health', (req, res) => {
