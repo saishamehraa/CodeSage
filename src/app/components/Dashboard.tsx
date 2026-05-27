@@ -1,5 +1,5 @@
 // src/app/components/Dashboard.tsx
-import { motion } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
 import { 
   Shield, AlertTriangle, CheckCircle, XCircle, TrendingUp, 
   Activity, Clock, Code2, Database, Search, Loader2, Brain, X 
