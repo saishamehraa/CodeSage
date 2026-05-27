@@ -388,3 +388,7 @@ Without reliable web access, autonomous security reasoning at this level would n
 **Built with ❤️ for the Web Data UNLOCKED Hackathon**
 
 *CodeSage - Making the web safer, one line of code at a time.*
+
+---
+
+![LICENSE](./license.md)

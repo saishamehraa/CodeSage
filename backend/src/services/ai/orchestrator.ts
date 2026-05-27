@@ -8,13 +8,13 @@ const MODEL_CHAIN = [
   "mistralai/mistral-nemo"
 ];
 
-// FIX 1: Add openAiKey to the parameter list
+// Add openAiKey to the parameter list
 export async function orchestrateAnalysis(fileName: string, content: string, openAiKey?: string) {
   // 1. Try Cloud Models First
   for (const model of MODEL_CHAIN) {
     try {
       console.log(`[Orchestrator] Attempting analysis with: ${model}`);
-      // FIX 2: Pass the key down to the analyzer
+      // Pass the key down to the analyzer
       return await analyzeCodeFile(fileName, content, model, openAiKey);
     } catch (error: any) {
       console.warn(`[Orchestrator] Model ${model} failed: ${error.message}`);
