@@ -391,4 +391,4 @@ Without reliable web access, autonomous security reasoning at this level would n
 
 ---
 
-![LICENSE](./license.md)
+![LICENSE](./LICENSE)
